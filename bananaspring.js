@@ -874,10 +874,10 @@ window.addEventListener('DOMContentLoaded', (event) => {
                 this.anchor.xmom -= ((this.body.x - this.anchor.x) / this.length) 
                 this.anchor.ymom -= ((this.body.y - this.anchor.y) / this.length) 
             } else if (this.beam.hypotenuse() > this.length) {
-                this.body.xmom -= (this.body.x - this.anchor.x) / (this.length)
-                this.body.ymom -= (this.body.y - this.anchor.y) / (this.length)
-                this.anchor.xmom += (this.body.x - this.anchor.x) / (this.length)
-                this.anchor.ymom += (this.body.y - this.anchor.y) / (this.length)
+                this.body.xmom -= (this.body.x - this.anchor.x) / (this.length)*3
+                this.body.ymom -= (this.body.y - this.anchor.y) / (this.length)*3
+                this.anchor.xmom += (this.body.x - this.anchor.x) / (this.length)*3
+                this.anchor.ymom += (this.body.y - this.anchor.y) / (this.length)*3
             }
 
             let xmomentumaverage = (this.body.xmom + this.anchor.xmom) / 2
@@ -1150,7 +1150,7 @@ window.addEventListener('DOMContentLoaded', (event) => {
             this.ray = []
         }
     }
-    function setUp(canvas_pass, style = "#0077AA") {
+    function setUp(canvas_pass, style = "#000000") {
         canvas = canvas_pass
         canvas_context = canvas.getContext('2d');
         canvas.style.background = style
@@ -1167,10 +1167,16 @@ window.addEventListener('DOMContentLoaded', (event) => {
             FLEX_engine = canvas.getBoundingClientRect();
             XS_engine = e.clientX - FLEX_engine.left;
             YS_engine = e.clientY - FLEX_engine.top;
-            TIP_engine.x = XS_engine*4
-            TIP_engine.y = YS_engine*4
+            TIP_engine.x = XS_engine*2
+            TIP_engine.y = YS_engine*2
             TIP_engine.body = TIP_engine
-            flesh.active = 1
+            for(let t = 0;t<flesh.body.length;t++){
+                if(flesh.body[t].bigbody.isPointInside(TIP_engine)){
+                    flesh.active = 1
+                    flesh.index = t
+                    break
+                }
+            }
             // example usage: if(object.isPointInside(TIP_engine)){ take action }
         });
         window.addEventListener('pointermove', continued_stimuli);
@@ -1184,8 +1190,8 @@ window.addEventListener('DOMContentLoaded', (event) => {
             FLEX_engine = canvas.getBoundingClientRect();
             XS_engine = e.clientX - FLEX_engine.left;
             YS_engine = e.clientY - FLEX_engine.top;
-            TIP_engine.x = XS_engine*4
-            TIP_engine.y = YS_engine*4
+            TIP_engine.x = XS_engine*2
+            TIP_engine.y = YS_engine*2
             TIP_engine.body = TIP_engine
         }
     }
@@ -1456,7 +1462,7 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
     class Bananaflesh{
         constructor(){
-            this.center = new Point(350, 350)
+            this.center = new Point(900, 900)
             this.body = []
             this.links = []
             let angle = -1
@@ -1464,33 +1470,77 @@ window.addEventListener('DOMContentLoaded', (event) => {
             let range = 2
             let size = 20
             this.dis = 200
-            for(angle = -1; angle < 1;angle+=range/100){
-                let circ = new Circle(this.center.x+(Math.cos(angle)*this.dis), this.center.y+(Math.sin(angle)*this.dis), size*1.1 + ((1-Math.abs(angle))*size), "#FFFFBB")
-                circ.bigbody = new Circle(this.center.x+(Math.cos(angle)*this.dis), this.center.y+(Math.sin(angle)*this.dis), size*1.1 + ((1-Math.abs(angle))*size), "#FFFF00")
+            for(angle = -1.4; angle < 1;angle+=range/100){
+                let circ = new Circle(this.center.x+(Math.cos(angle)*this.dis), this.center.y+(Math.sin(angle)*this.dis), (size*1.1) + ((1-Math.abs(angle))*size), "#FFFFAA")
+                circ.bigbody = new Circle(this.center.x+(Math.cos(angle)*this.dis), this.center.y+(Math.sin(angle)*this.dis), (size*1.1) + ((1-Math.abs(angle))*size), "#FFFF00")
+                if(angle < -1){
+                    circ.bigbody.color = '#775500'
+                }           
+                if(angle > .98){
+                    circ.bigbody.color = '#775500'
+                }
                 circ.bigbody.friction = .965
                 this.body.push(circ)
             }
             this.wrapper = []
             for(let t = 1;t<this.body.length;t++){
-                let spring = new SpringOP(this.body[t].bigbody, this.body[t-1].bigbody, (new LineOP(this.body[t], this.body[t-1])).hypotenuse(), this.body.radius, "#FFFF00")
+                let spring = new SpringOP(this.body[t].bigbody, this.body[t-1].bigbody, (new LineOP(this.body[t], this.body[t-1])).hypotenuse(), this.body[t].radius,this.body[t-1].bigbody.color)
                 this.wrapper.push(spring)
             }
             this.active = 0
+            this.rip = 0
+            this.index = 1
         }
         draw(){
+
+            // if(this.active == 1){
             for(let t = 0;t<this.wrapper.length;t++){
                 this.wrapper[t].balance()
             }
-            for(let t = 0;t<this.body.length;t++){
+            for(let t = 0;t<this.wrapper.length;t++){
+                this.wrapper[t].balance()
+            }
+            for(let t = 0;t<this.wrapper.length;t++){
+                this.wrapper[t].balance()
+            }
+            for(let t = 0;t<this.wrapper.length;t++){
+                this.wrapper[t].balance()
+            }
+        // }
+        for(let t = 0;t<this.body.length;t++){
+            // this.body[t].draw()
+
+        if(this.rip == 0){
+            this.body[this.body.length-1].bigbody.xmom = 0
+            this.body[this.body.length-1].bigbody.ymom = 0
+        }
+            this.body[t].bigbody.frictiveMove()
+        }
+            for(let t = 20;t<this.body.length;t++){
                 this.body[t].draw()
-                this.body[this.body.length-1].bigbody.xmom = 0
-                this.body[this.body.length-1].bigbody.ymom = 0
-                this.body[t].bigbody.frictiveMove()
-                this.body[t].bigbody.draw()
+
+            // if(this.rip == 0){
+            //     this.body[this.body.length-1].bigbody.xmom = 0
+            //     this.body[this.body.length-1].bigbody.ymom = 0
+            // }
+            //     this.body[t].bigbody.frictiveMove()
             }
             if(this.active == 1){
-                this.body[1].bigbody.xmom += (TIP_engine.x-this.body[1].bigbody.x)/10
-                this.body[1].bigbody.ymom += (TIP_engine.y-this.body[1].bigbody.y)/10
+                this.body[this.index].bigbody.xmom += (TIP_engine.x-this.body[this.index].bigbody.x)/3
+                this.body[this.index].bigbody.ymom += (TIP_engine.y-this.body[this.index].bigbody.y)/3
+            }
+
+            for(let t = 0;t<this.wrapper.length;t++){
+                this.wrapper[t].beam.width = this.wrapper[t].body.radius*2
+                this.wrapper[t].draw()
+            }
+
+            for(let t = 0;t<this.body.length;t++){
+            this.body[t].bigbody.draw()
+            }
+            if((new LineOP(this.body[this.body.length-2].bigbody, this.body[this.body.length-1].bigbody, "red", 1).hypotenuse() > 10)){
+                this.rip = 1
+                // this.active = 0
             }
         }
     }
@@ -1500,11 +1550,27 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
     let flesh = new Bananaflesh()
 
-    canvas_context.scale(.25, .25)
+    canvas_context.scale(.5,.5)
+    let score = 0
 
     function main() {
-        canvas_context.clearRect(0, 0, canvas.width*100, canvas.height*100)  // refreshes the image
+        canvas_context.clearRect(0, 0, canvas.width*2, canvas.height*2)  // refreshes the image
         flesh.draw()
+        if(flesh.rip == 1){
+            if(typeof flesh.timer != "number"){
+                flesh.timer =170-score*4
+                score++
+            }else{
+                flesh.timer--
+                if(flesh.timer <= 0){
+                    flesh = new Bananaflesh()
+                }
+            }
+        }
+
+        canvas_context.font = "100px arial"
+        canvas_context.fillStyle = "white"
+        canvas_context.fillText(score, 120,120)
     }
 
 
